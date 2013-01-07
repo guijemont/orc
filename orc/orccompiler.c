@@ -722,6 +722,10 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
         insn->src_args[k] = actual_var;
       }
 
+      /* FIXME: how do we identify opcodes that work with doubles? */
+      if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_SRC)
+        compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
+
       if (!compiler->vars[var].used) {
         if (compiler->vars[var].vartype == ORC_VAR_TYPE_TEMP) {
           ORC_COMPILER_ERROR(compiler, "using uninitialized temp var at line %d", insn->line);
@@ -770,6 +774,10 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
         actual_var = compiler->vars[var].replacement;
         insn->dest_args[k] = actual_var;
       }
+
+      /* FIXME: how do we identify opcodes that work with doubles? */
+      if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_DEST)
+        compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
 
       if (!compiler->vars[var].used) {
         compiler->vars[actual_var].used = TRUE;
