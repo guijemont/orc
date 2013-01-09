@@ -43,6 +43,7 @@ mips_rule_load (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = compiler->vars[insn->src_args[0]].ptr_register;
   int dest = compiler->vars[insn->dest_args[0]].alloc;
+  int type = compiler->vars[insn->dest_args[0]].param_type;
   /* such that 2^total_shift is the amount to load at a time */
   int total_shift = compiler->insn_shift + ORC_PTR_TO_INT (user);
   int is_aligned = compiler->vars[insn->src_args[0]].is_aligned;
@@ -70,11 +71,31 @@ mips_rule_load (OrcCompiler *compiler, void *user, OrcInstruction *insn)
     break;
   case 2:
     if (is_aligned) {
-      orc_mips_emit_lw (compiler, dest, src, offset);
+      switch (type) {
+      case ORC_PARAM_TYPE_INT:
+        orc_mips_emit_lw (compiler, dest, src, offset);
+        break;
+      case ORC_PARAM_TYPE_FLOAT:
+        orc_mips_emit_lwc1 (compiler, dest, src, offset);
+        break;
+      default:
+        ORC_COMPILER_ERROR (compiler, "unimplemented");
+      }
     } else {
-      /* note: the code below is little endian specific */
-      orc_mips_emit_lwr (compiler, dest, src, offset);
-      orc_mips_emit_lwl (compiler, dest, src, offset+3);
+      switch (type) {
+      case ORC_PARAM_TYPE_INT:
+        /* note: the code below is little endian specific */
+        orc_mips_emit_lwr (compiler, dest, src, offset);
+        orc_mips_emit_lwl (compiler, dest, src, offset+3);
+        break;
+      case ORC_PARAM_TYPE_FLOAT:
+        orc_mips_emit_lwr (compiler, ORC_MIPS_T3, src, offset);
+        orc_mips_emit_lwl (compiler, ORC_MIPS_T3, src, offset+3);
+        orc_mips_emit_mtc1 (compiler, dest, ORC_MIPS_T3);
+            break;
+      default:
+        ORC_COMPILER_ERROR (compiler, "unimplemented");
+      }
     }
     break;
   default:
@@ -87,6 +108,7 @@ void
 mips_rule_store (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = compiler->vars[insn->src_args[0]].alloc;
+  int type = compiler->vars[insn->src_args[0]].param_type;
   int dest = compiler->vars[insn->dest_args[0]].ptr_register;
   int total_shift = compiler->insn_shift + ORC_PTR_TO_INT (user);
   int is_aligned = compiler->vars[insn->dest_args[0]].is_aligned;
@@ -111,10 +133,30 @@ mips_rule_store (OrcCompiler *compiler, void *user, OrcInstruction *insn)
     break;
   case 2:
     if (is_aligned) {
-      orc_mips_emit_sw (compiler, src, dest, offset);
+      switch (type) {
+      case ORC_PARAM_TYPE_INT:
+        orc_mips_emit_sw (compiler, src, dest, offset);
+        break;
+      case ORC_PARAM_TYPE_FLOAT:
+        orc_mips_emit_swc1 (compiler, src, dest, offset);
+        break;
+      default:
+        ORC_COMPILER_ERROR (compiler, "unimplemented");
+      }
     } else {
-      orc_mips_emit_swr (compiler, src, dest, offset);
-      orc_mips_emit_swl (compiler, src, dest, offset+3);
+      switch (type) {
+      case ORC_PARAM_TYPE_INT:
+        orc_mips_emit_swr (compiler, src, dest, offset);
+        orc_mips_emit_swl (compiler, src, dest, offset+3);
+        break;
+      case ORC_PARAM_TYPE_FLOAT:
+        orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, src);
+        orc_mips_emit_swr (compiler, ORC_MIPS_T3, dest, offset);
+        orc_mips_emit_swl (compiler, ORC_MIPS_T3, dest, offset+3);
+        break;
+      default:
+        ORC_COMPILER_ERROR (compiler, "unimplemented");
+      }
     }
     break;
   default:
@@ -530,13 +572,19 @@ mips_rule_loadp (OrcCompiler *compiler, void *user, OrcInstruction *insn)
         orc_mips_emit_replv_ph (compiler, dest->alloc, dest->alloc);
     } else if (size == 4) {
       orc_int16 high_bits;
+      int dest_reg = dest->alloc;
+      if (dest->param_type == ORC_PARAM_TYPE_FLOAT)
+        dest_reg = ORC_MIPS_T3;
+
       high_bits = ((src->value.i >> 16) & 0xffff);
       if (high_bits) {
-        orc_mips_emit_lui (compiler, dest->alloc, high_bits);
-        orc_mips_emit_ori (compiler, dest->alloc, dest->alloc, src->value.i & 0xffff);
+        orc_mips_emit_lui (compiler, dest_reg, high_bits);
+        orc_mips_emit_ori (compiler, dest_reg, dest_reg, src->value.i & 0xffff);
       } else {
-        orc_mips_emit_ori (compiler, dest->alloc, ORC_MIPS_ZERO, src->value.i & 0xffff);
+        orc_mips_emit_ori (compiler, dest_reg, ORC_MIPS_ZERO, src->value.i & 0xffff);
       }
+      if (dest->param_type == ORC_PARAM_TYPE_FLOAT)
+        orc_mips_emit_mtc1 (compiler, dest->alloc, dest_reg);
     } else {
       ORC_PROGRAM_ERROR(compiler,"unimplemented");
     }
@@ -550,8 +598,13 @@ mips_rule_loadp (OrcCompiler *compiler, void *user, OrcInstruction *insn)
                         ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[0]));
       orc_mips_emit_replv_ph (compiler, dest->alloc, dest->alloc);
     } else if (size == 4) {
-      orc_mips_emit_lw (compiler, dest->alloc, compiler->exec_reg,
-                        ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[0]));
+      if (dest->param_type == ORC_PARAM_TYPE_FLOAT) {
+        orc_mips_emit_lwc1 (compiler, dest->alloc, compiler->exec_reg,
+                          ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[0]));
+      } else {
+        orc_mips_emit_lw (compiler, dest->alloc, compiler->exec_reg,
+                          ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[0]));
+      }
     } else {
       ORC_PROGRAM_ERROR(compiler,"unimplemented");
     }
