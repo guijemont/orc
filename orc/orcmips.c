@@ -209,6 +209,7 @@ orc_mips_emit_sb (OrcCompiler *compiler, OrcMipsRegister reg,
   orc_mips_emit (compiler, MIPS_IMMEDIATE_INSTRUCTION(050, base, reg, offset));
 }
 
+/* FIXME: parameters are badly named and ordered */
 void
 orc_mips_emit_lw (OrcCompiler *compiler, OrcMipsRegister dest,
                   OrcMipsRegister base, unsigned int offset)
@@ -969,4 +970,87 @@ orc_mips_emit_pref (OrcCompiler *compiler,
                  | (hint & 0x1f) << 16
                  | (offset & 0xffff));
 
+}
+
+void
+orc_mips_emit_add_s (OrcCompiler *compiler,
+                     OrcMipsFloatRegister dest,
+                     OrcMipsFloatRegister source1,
+                     OrcMipsFloatRegister source2)
+{
+  ORC_ASM_CODE (compiler, "  add.s   %s, %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source1),
+                orc_mips_reg_name (source2));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 0x10 << 21 /* single precision fp */
+                 | (source2 - ORC_FP_REG_BASE) << 16
+                 | (source1 - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 0 /* ADD */);
+}
+
+void
+orc_mips_emit_lwc1 (OrcCompiler *compiler,
+                    OrcMipsFloatRegister dest,
+                    OrcMipsRegister src,
+                    int offset)
+{
+  ORC_ASM_CODE (compiler, "  lwc1    %s, %d(%s)\n",
+                orc_mips_reg_name (dest),
+                offset, orc_mips_reg_name (src));
+  orc_mips_emit (compiler,
+                 061 << 26 /* LWC1 */
+                 | (src - ORC_GP_REG_BASE) << 21
+                 | (dest - ORC_FP_REG_BASE) << 16
+                 | (offset & 0xffff));
+}
+
+void
+orc_mips_emit_swc1 (OrcCompiler *compiler,
+                    OrcMipsFloatRegister src,
+                    OrcMipsRegister dest,
+                    int offset)
+{
+  ORC_ASM_CODE (compiler, "  swc1    %s, %d(%s)\n",
+                orc_mips_reg_name (src),
+                offset, orc_mips_reg_name (dest));
+  orc_mips_emit (compiler,
+                 071 << 26 /* SWC1 */
+                 | (dest - ORC_GP_REG_BASE) << 21
+                 | (src - ORC_FP_REG_BASE) << 16
+                 | (offset & 0xff));
+}
+
+void
+orc_mips_emit_mtc1 (OrcCompiler *compiler,
+                    OrcMipsFloatRegister dest,
+                    OrcMipsRegister src)
+{
+  ORC_ASM_CODE (compiler, "  mtc1    %s, %s\n",
+                orc_mips_reg_name (src),
+                orc_mips_reg_name (dest));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 04 << 21 /* MT */
+                 | (src - ORC_GP_REG_BASE) << 16
+                 | (dest - ORC_FP_REG_BASE) << 11
+                 | 0);
+}
+
+void
+orc_mips_emit_mfc1 (OrcCompiler *compiler,
+                    OrcMipsRegister dest,
+                    OrcMipsFloatRegister src)
+{
+  ORC_ASM_CODE (compiler, "  mfc1    %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (src));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 0 << 21 /* MF */
+                 | (dest - ORC_GP_REG_BASE) << 16
+                 | (src - ORC_FP_REG_BASE) << 11
+                 | 0);
 }
