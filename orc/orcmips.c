@@ -73,10 +73,21 @@ orc_mips_reg_name (int reg)
     "$gp", "$sp", "$fp", "$ra"
   };
 
-  if (reg < ORC_GP_REG_BASE || reg > ORC_GP_REG_BASE + 32)
-    return "ERROR";
+  static const char *fp_regs[] = {
+    "$f0", "$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7",
+    "$f8", "$f9", "$f10", "$f11", "$f12", "$f13", "$f14", "$f15",
+    "$f16", "$f17", "$f18", "$f19", "$f20", "$f21", "$f22", "$f23",
+    "$f24", "$f25", "$f26", "$f27", "$f28", "$f29", "$f30", "$f31"
+  };
 
-  return regs[reg-32];
+  if (reg >= ORC_GP_REG_BASE && reg < ORC_GP_REG_BASE + 32)
+    return regs[reg-ORC_GP_REG_BASE];
+
+  if (reg >= ORC_FP_REG_BASE && reg < ORC_FP_REG_BASE + 32)
+    return fp_regs[reg-ORC_FP_REG_BASE];
+
+
+  return "ERROR";
 }
 
 void

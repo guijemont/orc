@@ -88,7 +88,7 @@ orc_mips_init (void)
 unsigned int
 orc_compiler_orc_mips_get_default_flags (void)
 {
-  unsigned int flags = 0;
+  unsigned int flags = ORC_TARGET_FP_REGISTERS;
 
   if (_orc_compiler_flag_debug) {
     flags |= ORC_TARGET_MIPS_FRAME_POINTER;
@@ -105,6 +105,8 @@ orc_compiler_orc_mips_init (OrcCompiler *compiler)
     compiler->use_frame_pointer = TRUE;
 
   for (i=ORC_GP_REG_BASE; i<ORC_GP_REG_BASE+32; i++)
+    compiler->valid_regs[i] = 1;
+  for (i=ORC_FP_REG_BASE; i<ORC_FP_REG_BASE+32; i++)
     compiler->valid_regs[i] = 1;
 
   compiler->valid_regs[ORC_MIPS_ZERO] = 0; /* always 0 */

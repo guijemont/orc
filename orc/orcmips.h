@@ -76,6 +76,41 @@ typedef enum {
   ORC_MIPS_RA
 } OrcMipsRegister;
 
+typedef enum {
+  ORC_MIPS_F0 = ORC_FP_REG_BASE + 0,
+  ORC_MIPS_F1,
+  ORC_MIPS_F2,
+  ORC_MIPS_F3,
+  ORC_MIPS_F4,
+  ORC_MIPS_F5,
+  ORC_MIPS_F6,
+  ORC_MIPS_F7,
+  ORC_MIPS_F8,
+  ORC_MIPS_F9,
+  ORC_MIPS_F10,
+  ORC_MIPS_F11,
+  ORC_MIPS_F12,
+  ORC_MIPS_F13,
+  ORC_MIPS_F14,
+  ORC_MIPS_F15,
+  ORC_MIPS_F16,
+  ORC_MIPS_F17,
+  ORC_MIPS_F18,
+  ORC_MIPS_F19,
+  ORC_MIPS_F20,
+  ORC_MIPS_F21,
+  ORC_MIPS_F22,
+  ORC_MIPS_F23,
+  ORC_MIPS_F24,
+  ORC_MIPS_F25,
+  ORC_MIPS_F26,
+  ORC_MIPS_F27,
+  ORC_MIPS_F28,
+  ORC_MIPS_F29,
+  ORC_MIPS_F30,
+  ORC_MIPS_F31
+} OrcMipsFloatRegister;
+
 void orc_mips_emit_label (OrcCompiler *compiler, unsigned int label);
 
 void orc_mips_emit_nop (OrcCompiler *compiler);
