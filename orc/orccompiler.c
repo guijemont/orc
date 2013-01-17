@@ -921,8 +921,10 @@ orc_compiler_rewrite_vars2 (OrcCompiler *compiler)
       if (compiler->vars[src1].last_use == j) {
         if (compiler->vars[src1].first_use == j) {
           int offset = compiler->target->data_register_offset;
-          if (compiler->vars[src1].param_type == ORC_PARAM_TYPE_FLOAT)
+          if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
+              && (compiler->vars[src1].param_type == ORC_PARAM_TYPE_FLOAT)) {
             offset = ORC_FP_REG_BASE;
+          }
           k = orc_compiler_allocate_register (compiler, offset);
           compiler->vars[src1].alloc = k;
         }
@@ -949,8 +951,10 @@ orc_compiler_rewrite_vars2 (OrcCompiler *compiler)
       if (compiler->vars[i].first_use == j) {
         int offset = compiler->target->data_register_offset;
         if (compiler->vars[i].alloc) continue;
-        if (compiler->vars[i].param_type == ORC_PARAM_TYPE_FLOAT)
+        if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
+            && (compiler->vars[i].param_type == ORC_PARAM_TYPE_FLOAT)) {
           offset = ORC_FP_REG_BASE;
+        }
         k = orc_compiler_allocate_register (compiler, offset);
         compiler->vars[i].alloc = k;
       }
