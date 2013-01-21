@@ -731,7 +731,18 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
 
       /* FIXME: how do we identify opcodes that work with doubles? */
       if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_SRC)
-        compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
+        switch (compiler->vars[actual_var].size) {
+        case 4:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
+          break;
+        case 8:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_DOUBLE;
+          break;
+        default:
+          ORC_COMPILER_ERROR(compiler, "Unhandled size for float: %d",
+                             compiler->vars[actual_var].size);
+          compiler->result = ORC_COMPILE_RESULT_UNKNOWN_PARSE;
+        }
 
       if (!compiler->vars[var].used) {
         if (compiler->vars[var].vartype == ORC_VAR_TYPE_TEMP) {
@@ -784,7 +795,18 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
 
       /* FIXME: how do we identify opcodes that work with doubles? */
       if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_DEST)
-        compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
+        switch (compiler->vars[actual_var].size) {
+        case 4:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
+          break;
+        case 8:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_DOUBLE;
+          break;
+        default:
+          ORC_COMPILER_ERROR(compiler, "Unhandled size for float: %d",
+                             compiler->vars[actual_var].size);
+          compiler->result = ORC_COMPILE_RESULT_UNKNOWN_PARSE;
+        }
 
       if (!compiler->vars[var].used) {
         compiler->vars[actual_var].used = TRUE;
