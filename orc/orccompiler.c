@@ -76,12 +76,35 @@ orc_compiler_flag_check (const char *flag)
   return FALSE;
 }
 
+static int
+available_reg (OrcCompiler *compiler, int reg)
+{
+  return compiler->valid_regs[reg] && compiler->alloc_regs[reg] == 0;
+}
+
 int
-orc_compiler_allocate_register (OrcCompiler *compiler, int reg_offset)
+orc_compiler_allocate_register (OrcCompiler *compiler,
+                                OrcVariable *var,
+                                int data_reg)
 {
   int i;
   int roff;
   int reg;
+  int double_register =
+      (compiler->target_flags & ORC_TARGET_DOUBLE_IN_TWO_REGISTERS)
+      && var != NULL && var->param_type == ORC_PARAM_TYPE_DOUBLE;
+  int reg_offset;
+
+  if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
+     && var && (var->param_type == ORC_PARAM_TYPE_FLOAT
+              || var->param_type == ORC_PARAM_TYPE_DOUBLE)) {
+    reg_offset = ORC_FP_REG_BASE;
+  } else if (data_reg) {
+    reg_offset = compiler->target->data_register_offset;
+  } else {
+    reg_offset = ORC_GP_REG_BASE;
+  }
+
 
   roff = 0;
   if (_orc_compiler_flag_randomize) {
@@ -91,20 +114,34 @@ orc_compiler_allocate_register (OrcCompiler *compiler, int reg_offset)
 
   for(i=0;i<32;i++){
     reg = reg_offset + ((roff + i)&0x1f);
-    if (compiler->valid_regs[reg] &&
-        !compiler->save_regs[reg] &&
-        compiler->alloc_regs[reg] == 0) {
+    if (available_reg (compiler, reg) &&
+        !compiler->save_regs[reg]) {
+      if (double_register &&
+          ((reg % 2 != 0) || !available_reg (compiler, reg+1) || compiler->save_regs[reg+1]))
+        continue;
+
       compiler->alloc_regs[reg]++;
       compiler->used_regs[reg] = 1;
+      if (double_register) {
+        compiler->alloc_regs[reg+1]++;
+        compiler->used_regs[reg+1] = 1;
+      }
       return reg;
     }
   }
   for(i=0;i<32;i++){
     reg = reg_offset + ((roff + i)&0x1f);
-    if (compiler->valid_regs[reg] &&
-        compiler->alloc_regs[reg] == 0) {
+    if (available_reg (compiler, reg)) {
+      if (double_register &&
+          ((reg % 2 != 0) || !available_reg (compiler, reg+1)))
+        continue;
+
       compiler->alloc_regs[reg]++;
       compiler->used_regs[reg] = 1;
+      if (double_register) {
+        compiler->alloc_regs[reg+1]++;
+        compiler->used_regs[reg+1] = 1;
+      }
       return reg;
     }
   }
@@ -729,7 +766,6 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
         insn->src_args[k] = actual_var;
       }
 
-      /* FIXME: how do we identify opcodes that work with doubles? */
       if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_SRC)
         switch (compiler->vars[actual_var].size) {
         case 4:
@@ -793,7 +829,6 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
         insn->dest_args[k] = actual_var;
       }
 
-      /* FIXME: how do we identify opcodes that work with doubles? */
       if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_DEST)
         switch (compiler->vars[actual_var].size) {
         case 4:
@@ -847,33 +882,23 @@ orc_compiler_global_reg_alloc (OrcCompiler *compiler)
       case ORC_VAR_TYPE_PARAM:
         break;
       case ORC_VAR_TYPE_SRC:
-        if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
-            && (var->param_type == ORC_PARAM_TYPE_FLOAT)) {
-          var->ptr_register = orc_compiler_allocate_register (compiler, ORC_FP_REG_BASE);
-          break;
-        }
-        var->ptr_register = orc_compiler_allocate_register (compiler, ORC_GP_REG_BASE);
+        var->ptr_register = orc_compiler_allocate_register (compiler, var, FALSE);
         if (compiler->need_mask_regs) {
-          var->mask_alloc = orc_compiler_allocate_register (compiler, compiler->target->data_register_offset);
-          var->ptr_offset = orc_compiler_allocate_register (compiler, ORC_GP_REG_BASE);
-          var->aligned_data = orc_compiler_allocate_register (compiler, compiler->target->data_register_offset);
+          var->mask_alloc = orc_compiler_allocate_register (compiler, var, TRUE);
+          var->ptr_offset = orc_compiler_allocate_register (compiler, var, FALSE);
+          var->aligned_data = orc_compiler_allocate_register (compiler, var, TRUE);
         }
         if (var->need_offset_reg) {
-          var->ptr_offset = orc_compiler_allocate_register (compiler, ORC_GP_REG_BASE);
+          var->ptr_offset = orc_compiler_allocate_register (compiler, var, FALSE);
         }
         break;
       case ORC_VAR_TYPE_DEST:
-        if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
-            && (var->param_type == ORC_PARAM_TYPE_FLOAT)) {
-          var->ptr_register = orc_compiler_allocate_register (compiler, ORC_FP_REG_BASE);
-          break;
-        }
-        var->ptr_register = orc_compiler_allocate_register (compiler, ORC_GP_REG_BASE);
+        var->ptr_register = orc_compiler_allocate_register (compiler, var, FALSE);
         break;
       case ORC_VAR_TYPE_ACCUMULATOR:
         var->first_use = -1;
         var->last_use = -1;
-        var->alloc = orc_compiler_allocate_register (compiler, compiler->target->data_register_offset);
+        var->alloc = orc_compiler_allocate_register (compiler, var, TRUE);
         break;
       case ORC_VAR_TYPE_TEMP:
         break;
@@ -891,16 +916,11 @@ orc_compiler_global_reg_alloc (OrcCompiler *compiler)
     OrcStaticOpcode *opcode = insn->opcode;
 
     if (opcode->flags & ORC_STATIC_OPCODE_INVARIANT) {
-      int reg_offset = compiler->target->data_register_offset;
       var = compiler->vars + insn->dest_args[0];
 
       var->first_use = -1;
       var->last_use = -1;
-      if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
-          && (var->param_type == ORC_PARAM_TYPE_FLOAT)) {
-        reg_offset = ORC_FP_REG_BASE;
-      }
-      var->alloc = orc_compiler_allocate_register (compiler, reg_offset);
+      var->alloc = orc_compiler_allocate_register (compiler, var, TRUE);
       insn->flags |= ORC_INSN_FLAG_INVARIANT;
     }
 
@@ -910,7 +930,7 @@ orc_compiler_global_reg_alloc (OrcCompiler *compiler)
   }
 
   if (compiler->alloc_loop_counter && !compiler->error) {
-    compiler->loop_counter = orc_compiler_allocate_register (compiler, ORC_GP_REG_BASE);
+    compiler->loop_counter = orc_compiler_allocate_register (compiler, NULL, FALSE);
     /* FIXME massive hack */
     if (compiler->loop_counter == 0) {
       compiler->error = FALSE;
@@ -939,19 +959,17 @@ orc_compiler_rewrite_vars2 (OrcCompiler *compiler)
         && compiler->insns[j].opcode->dest_size[1] == 0) {
       int src1 = compiler->insns[j].src_args[0];
       int dest = compiler->insns[j].dest_args[0];
+      OrcVariable *var;
 
-      if (compiler->vars[src1].last_use == j) {
-        if (compiler->vars[src1].first_use == j) {
-          int offset = compiler->target->data_register_offset;
-          if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
-              && (compiler->vars[src1].param_type == ORC_PARAM_TYPE_FLOAT)) {
-            offset = ORC_FP_REG_BASE;
-          }
-          k = orc_compiler_allocate_register (compiler, offset);
-          compiler->vars[src1].alloc = k;
+      var = compiler->vars + src1;
+
+      if (var->last_use == j) {
+        if (var->first_use == j) {
+          k = orc_compiler_allocate_register (compiler, var, TRUE);
+          var->alloc = k;
         }
-        compiler->alloc_regs[compiler->vars[src1].alloc]++;
-        compiler->vars[dest].alloc = compiler->vars[src1].alloc;
+        compiler->alloc_regs[var->alloc]++;
+        compiler->vars[dest].alloc = var->alloc;
       }
     }
 #endif
@@ -968,17 +986,13 @@ orc_compiler_rewrite_vars2 (OrcCompiler *compiler)
     }
 
     for(i=0;i<ORC_N_COMPILER_VARIABLES;i++){
-      if (compiler->vars[i].name == NULL) continue;
-      if (compiler->vars[i].last_use == -1) continue;
-      if (compiler->vars[i].first_use == j) {
-        int offset = compiler->target->data_register_offset;
-        if (compiler->vars[i].alloc) continue;
-        if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)
-            && (compiler->vars[i].param_type == ORC_PARAM_TYPE_FLOAT)) {
-          offset = ORC_FP_REG_BASE;
-        }
-        k = orc_compiler_allocate_register (compiler, offset);
-        compiler->vars[i].alloc = k;
+      OrcVariable *var = compiler->vars + i;
+      if (var->name == NULL) continue;
+      if (var->last_use == -1) continue;
+      if (var->first_use == j) {
+        if (var->alloc) continue;
+        k = orc_compiler_allocate_register (compiler, var, TRUE);
+        var->alloc = k;
       }
     }
     for(i=0;i<ORC_N_COMPILER_VARIABLES;i++){
