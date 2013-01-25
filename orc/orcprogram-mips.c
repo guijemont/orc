@@ -147,6 +147,7 @@ orc_compiler_orc_mips_init (OrcCompiler *compiler)
     compiler->loop_shift = 1;
     break;
   case 4:
+  case 8:
     compiler->loop_shift = 0;
     break;
   default:
@@ -535,6 +536,8 @@ get_shift (int size)
       return 1;
     case 4:
       return 2;
+    case 8:
+      return 3;
     default:
       ORC_ERROR("bad size %d", size);
   }
