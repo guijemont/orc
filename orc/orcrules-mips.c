@@ -98,6 +98,23 @@ mips_rule_load (OrcCompiler *compiler, void *user, OrcInstruction *insn)
       }
     }
     break;
+  case 3:
+    if (type != ORC_PARAM_TYPE_DOUBLE) {
+      ORC_COMPILER_ERROR (compiler, "unimplemented");
+      break;
+    }
+    if (is_aligned) {
+      orc_mips_emit_ldc1 (compiler, dest, src, offset);
+    } else {
+      /* note: little endian specific */
+      orc_mips_emit_lwr (compiler, ORC_MIPS_T3, src, offset);
+      orc_mips_emit_lwl (compiler, ORC_MIPS_T3, src, offset+3);
+      orc_mips_emit_lwr (compiler, ORC_MIPS_T4, src, offset+4);
+      orc_mips_emit_lwl (compiler, ORC_MIPS_T4, src, offset+7);
+      orc_mips_emit_mtc1 (compiler, dest, ORC_MIPS_T3);
+      orc_mips_emit_mthc1 (compiler, dest, ORC_MIPS_T4);
+    }
+    break;
   default:
     ORC_PROGRAM_ERROR(compiler, "Don't know how to handle that shift");
   }
@@ -157,6 +174,22 @@ mips_rule_store (OrcCompiler *compiler, void *user, OrcInstruction *insn)
       default:
         ORC_COMPILER_ERROR (compiler, "unimplemented");
       }
+    }
+    break;
+  case 3:
+    if (type != ORC_PARAM_TYPE_DOUBLE) {
+      ORC_COMPILER_ERROR (compiler, "unimplemented");
+      break;
+    }
+    if (is_aligned) {
+      orc_mips_emit_sdc1 (compiler, src, dest, offset);
+    } else {
+      orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, src);
+      orc_mips_emit_mfhc1 (compiler, ORC_MIPS_T4, src);
+      orc_mips_emit_swr (compiler, ORC_MIPS_T3, dest, offset);
+      orc_mips_emit_swl (compiler, ORC_MIPS_T3, dest, offset+3);
+      orc_mips_emit_swr (compiler, ORC_MIPS_T4, dest, offset+4);
+      orc_mips_emit_swl (compiler, ORC_MIPS_T4, dest, offset+7);
     }
     break;
   default:
@@ -747,12 +780,14 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
 
   rule_set = orc_rule_set_new (orc_opcode_set_get("sys"), target, 0);
 
+  orc_rule_register (rule_set, "loadq", mips_rule_load, (void *) 3);
   orc_rule_register (rule_set, "loadl", mips_rule_load, (void *) 2);
   orc_rule_register (rule_set, "loadw", mips_rule_load, (void *) 1);
   orc_rule_register (rule_set, "loadb", mips_rule_load, (void *) 0);
   orc_rule_register (rule_set, "loadpl", mips_rule_loadp, (void *) 4);
   orc_rule_register (rule_set, "loadpw", mips_rule_loadp, (void *) 2);
   orc_rule_register (rule_set, "loadpb", mips_rule_loadp, (void *) 1);
+  orc_rule_register (rule_set, "storeq", mips_rule_store, (void *)3);
   orc_rule_register (rule_set, "storel", mips_rule_store, (void *)2);
   orc_rule_register (rule_set, "storew", mips_rule_store, (void *)1);
   orc_rule_register (rule_set, "storeb", mips_rule_store, (void *)0);
