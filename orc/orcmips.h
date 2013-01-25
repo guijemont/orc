@@ -225,6 +225,8 @@ void orc_mips_emit_seh (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegi
 void orc_mips_emit_pref (OrcCompiler *compiler, int hint, OrcMipsRegister base, int offset);
 void orc_mips_emit_add_s (OrcCompiler *compiler, OrcMipsFloatRegister dest,
      OrcMipsFloatRegister source1, OrcMipsFloatRegister source2);
+void orc_mips_emit_add_d (OrcCompiler *compiler, OrcMipsFloatRegister dest,
+     OrcMipsFloatRegister source1, OrcMipsFloatRegister source2);
 void orc_mips_emit_lwc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsRegister src, int offset);
 void orc_mips_emit_ldc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsRegister src, int offset);
 void orc_mips_emit_swc1 (OrcCompiler *compiler, OrcMipsFloatRegister src, OrcMipsRegister dest, int offset);

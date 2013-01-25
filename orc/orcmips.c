@@ -992,6 +992,26 @@ orc_mips_emit_add_s (OrcCompiler *compiler,
 }
 
 void
+orc_mips_emit_add_d (OrcCompiler *compiler,
+                     OrcMipsFloatRegister dest,
+                     OrcMipsFloatRegister source1,
+                     OrcMipsFloatRegister source2)
+{
+  ORC_ASM_CODE (compiler, "  add.d   %s, %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source1),
+                orc_mips_reg_name (source2));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 0x11 << 21 /* double precision fp */
+                 | (source2 - ORC_FP_REG_BASE) << 16
+                 | (source1 - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 0 /* ADD */);
+}
+
+
+void
 orc_mips_emit_lwc1 (OrcCompiler *compiler,
                     OrcMipsFloatRegister dest,
                     OrcMipsRegister src,
