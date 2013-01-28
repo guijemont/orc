@@ -1139,3 +1139,37 @@ orc_mips_emit_mfhc1 (OrcCompiler *compiler,
                  | (src - ORC_FP_REG_BASE) << 11
                  | 0);
 }
+
+void
+orc_mips_emit_cvt_s_d (OrcCompiler *compiler,
+                       OrcMipsFloatRegister dest,
+                       OrcMipsFloatRegister src)
+{
+  ORC_ASM_CODE (compiler, "  cvt.s.d  %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (src));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 0x11 << 21 /* double precision floating point format  */
+                 | 0 << 16
+                 | (src - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 040 /* CVT.S */);
+}
+
+void
+orc_mips_emit_trunc_w_d (OrcCompiler *compiler,
+                         OrcMipsFloatRegister dest,
+                         OrcMipsFloatRegister src)
+{
+  ORC_ASM_CODE (compiler, "  trunc.w.d %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (src));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 0x11 << 21 /* double precision floating point format  */
+                 | 0 << 16
+                 | (src - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 015 /* TRUNC.W */);
+}
