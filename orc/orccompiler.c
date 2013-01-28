@@ -952,6 +952,8 @@ orc_compiler_rewrite_vars2 (OrcCompiler *compiler)
      *  - rule must handle it
      *  - src1 must be last_use
      *  - only one dest
+     *  - src1 and dest must be of the same param_type if
+     *    ORC_TARGET_FP_REGISTERS is set
      */
     if (compiler->insns[j].flags & ORC_INSN_FLAG_INVARIANT) continue;
 
@@ -959,17 +961,21 @@ orc_compiler_rewrite_vars2 (OrcCompiler *compiler)
         && compiler->insns[j].opcode->dest_size[1] == 0) {
       int src1 = compiler->insns[j].src_args[0];
       int dest = compiler->insns[j].dest_args[0];
-      OrcVariable *var;
 
-      var = compiler->vars + src1;
+      if (!(compiler->target_flags & ORC_TARGET_FP_REGISTERS)
+          || compiler->vars[src1].param_type == compiler->vars[dest].param_type) {
+        OrcVariable *var;
 
-      if (var->last_use == j) {
-        if (var->first_use == j) {
-          k = orc_compiler_allocate_register (compiler, var, TRUE);
-          var->alloc = k;
+        var = compiler->vars + src1;
+
+        if (var->last_use == j) {
+          if (var->first_use == j) {
+            k = orc_compiler_allocate_register (compiler, var, TRUE);
+            var->alloc = k;
+          }
+          compiler->alloc_regs[var->alloc]++;
+          compiler->vars[dest].alloc = var->alloc;
         }
-        compiler->alloc_regs[var->alloc]++;
-        compiler->vars[dest].alloc = var->alloc;
       }
     }
 #endif
