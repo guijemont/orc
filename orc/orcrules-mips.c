@@ -704,6 +704,19 @@ mips_rule_convwb (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 }
 
 void
+mips_rule_convlw (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src = ORC_SRC_ARG (compiler, insn, 0);
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+
+  if (compiler->insn_shift >0) {
+    orc_mips_emit_andi (compiler, dest, src, 0xffff);
+  } else if (src != dest) {
+    orc_mips_emit_move (compiler, dest, src);
+  }
+}
+
+void
 mips_rule_select1wb (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = ORC_SRC_ARG (compiler, insn, 0);
@@ -873,6 +886,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "convsbw", mips_rule_convsbw, NULL);
   orc_rule_register (rule_set, "convubw", mips_rule_convubw, NULL);
   orc_rule_register (rule_set, "convwb", mips_rule_convwb, NULL);
+  orc_rule_register (rule_set, "convlw", mips_rule_convlw, NULL);
   orc_rule_register (rule_set, "select0wb", mips_rule_convwb, NULL);
   orc_rule_register (rule_set, "select1wb", mips_rule_select1wb, NULL);
   orc_rule_register (rule_set, "select0lw", mips_rule_select0lw, NULL);
