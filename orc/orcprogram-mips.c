@@ -128,6 +128,10 @@ orc_compiler_orc_mips_init (OrcCompiler *compiler)
   compiler->valid_regs[ORC_MIPS_FP] = 0; /* frame pointer */
   compiler->valid_regs[ORC_MIPS_RA] = 0; /* return address */
 
+  /* used as temporary variables */
+  compiler->valid_regs[ORC_MIPS_F0] = 0;
+  compiler->valid_regs[ORC_MIPS_F1] = 0;
+
   for (i=0;i<ORC_N_REGS;i++){
     compiler->alloc_regs[i] = 0;
     compiler->used_regs[i] = 0;
