@@ -807,6 +807,28 @@ mips_rule_addf (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 }
 
 void
+mips_rule_divf (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src1 = ORC_SRC_ARG (compiler, insn, 0);
+  int src2 = ORC_SRC_ARG (compiler, insn, 1);
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+  int format = ORC_PTR_TO_INT (user);
+
+  orc_mips_emit_div_fmt (compiler, format, dest, src1, src2);
+}
+
+void
+mips_rule_mulf (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src1 = ORC_SRC_ARG (compiler, insn, 0);
+  int src2 = ORC_SRC_ARG (compiler, insn, 1);
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+  int format = ORC_PTR_TO_INT (user);
+
+  orc_mips_emit_mul_fmt (compiler, format, dest, src1, src2);
+}
+
+void
 mips_rule_convdf (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = ORC_SRC_ARG (compiler, insn, 0);
@@ -922,6 +944,10 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "subw", mips_rule_subw, NULL);
   orc_rule_register (rule_set, "addf", mips_rule_addf, (void *)ORC_MIPS_FMT_S);
   orc_rule_register (rule_set, "addd", mips_rule_addf, (void *)ORC_MIPS_FMT_D);
+  orc_rule_register (rule_set, "divf", mips_rule_divf, (void *)ORC_MIPS_FMT_S);
+  orc_rule_register (rule_set, "divd", mips_rule_divf, (void *)ORC_MIPS_FMT_D);
+  orc_rule_register (rule_set, "mulf", mips_rule_mulf, (void *)ORC_MIPS_FMT_S);
+  orc_rule_register (rule_set, "muld", mips_rule_mulf, (void *)ORC_MIPS_FMT_D);
   orc_rule_register (rule_set, "convdf", mips_rule_convdf, NULL);
   orc_rule_register (rule_set, "convdl", mips_rule_convdl, NULL);
   orc_rule_register (rule_set, "convfd", mips_rule_convfd, NULL);
