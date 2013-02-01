@@ -1241,3 +1241,20 @@ orc_mips_emit_trunc_w_s (OrcCompiler *compiler,
                  | (dest - ORC_FP_REG_BASE) << 6
                  | 015 /* TRUNC.W */);
 }
+
+void
+orc_mips_emit_mov_s (OrcCompiler *compiler,
+                     OrcMipsFloatRegister dest,
+                     OrcMipsFloatRegister src)
+{
+  ORC_ASM_CODE (compiler, "  mov.s   %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (src));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | 0x10 << 21 /* single precision floating point format  */
+                 | 0 << 16
+                 | (src - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 06 /* MOV */);
+}
