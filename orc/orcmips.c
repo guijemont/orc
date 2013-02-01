@@ -1011,6 +1011,48 @@ orc_mips_emit_add_fmt (OrcCompiler *compiler,
 }
 
 void
+orc_mips_emit_div_fmt (OrcCompiler *compiler,
+                       int format,
+                       OrcMipsFloatRegister dest,
+                       OrcMipsFloatRegister source1,
+                       OrcMipsFloatRegister source2)
+{
+  ORC_ASM_CODE (compiler, "  div.%s   %s, %s, %s\n",
+                orc_mips_format_name (format),
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source1),
+                orc_mips_reg_name (source2));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | format << 21
+                 | (source2 - ORC_FP_REG_BASE) << 16
+                 | (source1 - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 03 /* DIV */);
+}
+
+void
+orc_mips_emit_mul_fmt (OrcCompiler *compiler,
+                       int format,
+                       OrcMipsFloatRegister dest,
+                       OrcMipsFloatRegister source1,
+                       OrcMipsFloatRegister source2)
+{
+  ORC_ASM_CODE (compiler, "  mul.%s   %s, %s, %s\n",
+                orc_mips_format_name (format),
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source1),
+                orc_mips_reg_name (source2));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | format << 21
+                 | (source2 - ORC_FP_REG_BASE) << 16
+                 | (source1 - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 02 /* MUL */);
+}
+
+void
 orc_mips_emit_lwc1 (OrcCompiler *compiler,
                     OrcMipsFloatRegister dest,
                     OrcMipsRegister src,
