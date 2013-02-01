@@ -231,10 +231,6 @@ void orc_mips_emit_add_fmt (OrcCompiler *compiler, int format,
                             OrcMipsFloatRegister dest,
                             OrcMipsFloatRegister source1,
                             OrcMipsFloatRegister source2);
-#define orc_mips_emit_add_s(p, dest, src1, src2) \
-    orc_mips_emit_add_fmt(p, ORC_MIPS_FMT_S, dest, src1, src2)
-#define orc_mips_emit_add_d(p, dest, src1, src2) \
-    orc_mips_emit_add_fmt(p, ORC_MIPS_FMT_D, dest, src1, src2)
 void orc_mips_emit_lwc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsRegister src, int offset);
 void orc_mips_emit_ldc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsRegister src, int offset);
 void orc_mips_emit_swc1 (OrcCompiler *compiler, OrcMipsFloatRegister src, OrcMipsRegister dest, int offset);
