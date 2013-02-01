@@ -1128,7 +1128,7 @@ orc_test_gcc_compile_mips (OrcProgram *p)
   ret = fwrite(p->orccode->code, p->orccode->code_size, 1, file);
   fclose (file);
 
-  sprintf (cmd, MIPS_PREFIX "gcc -mips32r2 -mdspr2 -Wall "
+  sprintf (cmd, MIPS_PREFIX "gcc -mips32r2 -mdspr2 -mhard-float -mdouble-float -Wall "
       "-c %s -o %s", source_filename, obj_filename);
   ret = system (cmd);
   if (ret != 0) {
