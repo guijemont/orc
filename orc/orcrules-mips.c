@@ -242,6 +242,24 @@ mips_rule_subb (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 }
 
 void
+mips_rule_copyq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  OrcVariable *src = compiler->vars + insn->src_args[0];
+  OrcVariable *dest = compiler->vars + insn->dest_args[0];
+
+  if (dest->param_type != ORC_PARAM_TYPE_DOUBLE
+      || src->param_type != ORC_PARAM_TYPE_DOUBLE) {
+    ORC_COMPILER_ERROR (compiler,
+                        "copyq for types other than double not implemented");
+    return;
+  }
+
+  if (dest->alloc != src->alloc) {
+    orc_mips_emit_mov_d (compiler, dest->alloc, src->alloc);
+  }
+}
+
+void
 mips_rule_copyl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   OrcVariable *src = compiler->vars + insn->src_args[0];
@@ -877,6 +895,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "addw", mips_rule_addw, NULL);
   orc_rule_register (rule_set, "addb", mips_rule_addb, NULL);
   orc_rule_register (rule_set, "subb", mips_rule_subb, NULL);
+  orc_rule_register (rule_set, "copyq", mips_rule_copyq, NULL);
   orc_rule_register (rule_set, "copyl", mips_rule_copyl, NULL);
   orc_rule_register (rule_set, "copyw", mips_rule_copyl, NULL);
   orc_rule_register (rule_set, "copyb", mips_rule_copyl, NULL);
