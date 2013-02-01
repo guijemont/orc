@@ -168,6 +168,10 @@ enum {
 #define orc_mips_emit_beq(compiler, reg1, reg2, label) \
     orc_mips_emit_conditional_branch(compiler, ORC_MIPS_BEQ, reg1, reg2, label)
 
+#define ORC_MIPS_FMT_S 0x10
+#define ORC_MIPS_FMT_D 0x11
+#define ORC_MIPS_FMT_W 0x14
+
 void orc_mips_emit_addiu (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);
 void orc_mips_emit_addi (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);
 void orc_mips_emit_add (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source1, OrcMipsRegister source2);
@@ -223,10 +227,14 @@ void orc_mips_emit_wsbh (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsReg
 void orc_mips_emit_seh (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source);
 
 void orc_mips_emit_pref (OrcCompiler *compiler, int hint, OrcMipsRegister base, int offset);
-void orc_mips_emit_add_s (OrcCompiler *compiler, OrcMipsFloatRegister dest,
-     OrcMipsFloatRegister source1, OrcMipsFloatRegister source2);
-void orc_mips_emit_add_d (OrcCompiler *compiler, OrcMipsFloatRegister dest,
-     OrcMipsFloatRegister source1, OrcMipsFloatRegister source2);
+void orc_mips_emit_add_fmt (OrcCompiler *compiler, int format,
+                            OrcMipsFloatRegister dest,
+                            OrcMipsFloatRegister source1,
+                            OrcMipsFloatRegister source2);
+#define orc_mips_emit_add_s(p, dest, src1, src2) \
+    orc_mips_emit_add_fmt(p, ORC_MIPS_FMT_S, dest, src1, src2)
+#define orc_mips_emit_add_d(p, dest, src1, src2) \
+    orc_mips_emit_add_fmt(p, ORC_MIPS_FMT_D, dest, src1, src2)
 void orc_mips_emit_lwc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsRegister src, int offset);
 void orc_mips_emit_ldc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsRegister src, int offset);
 void orc_mips_emit_swc1 (OrcCompiler *compiler, OrcMipsFloatRegister src, OrcMipsRegister dest, int offset);
@@ -236,15 +244,27 @@ void orc_mips_emit_mthc1 (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcM
 void orc_mips_emit_mfc1 (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsFloatRegister src);
 void orc_mips_emit_mfhc1 (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsFloatRegister src);
 
-void orc_mips_emit_mov_s (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
-void orc_mips_emit_mov_d (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
+void orc_mips_emit_mov_fmt (OrcCompiler *compiler, int format, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
+#define orc_mips_emit_mov_s(p, dest, src) \
+    orc_mips_emit_mov_fmt(p, ORC_MIPS_FMT_S, dest, src)
+#define orc_mips_emit_mov_d(p, dest, src) \
+    orc_mips_emit_mov_fmt(p, ORC_MIPS_FMT_D, dest, src)
 
-void orc_mips_emit_cvt_s_d (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
-void orc_mips_emit_cvt_s_w (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
-void orc_mips_emit_cvt_d_s (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
-void orc_mips_emit_cvt_d_w (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
-void orc_mips_emit_trunc_w_d (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
-void orc_mips_emit_trunc_w_s (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
+void orc_mips_emit_cvt_s_fmt (OrcCompiler *compiler, int format, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
+#define orc_mips_emit_cvt_s_d(p, dest, src) \
+    orc_mips_emit_cvt_s_fmt(p, ORC_MIPS_FMT_D, dest, src)
+#define orc_mips_emit_cvt_s_w(p, dest, src) \
+    orc_mips_emit_cvt_s_fmt(p, ORC_MIPS_FMT_W, dest, src)
+void orc_mips_emit_cvt_d_fmt (OrcCompiler *compiler, int format, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
+#define orc_mips_emit_cvt_d_s(p, dest, src) \
+    orc_mips_emit_cvt_d_fmt(p, ORC_MIPS_FMT_S, dest, src)
+#define orc_mips_emit_cvt_d_w(p, dest, src) \
+    orc_mips_emit_cvt_d_fmt(p, ORC_MIPS_FMT_W, dest, src)
+void orc_mips_emit_trunc_w_fmt (OrcCompiler *compiler, int format, OrcMipsFloatRegister dest, OrcMipsFloatRegister src);
+#define orc_mips_emit_trunc_w_d(p, dest, src) \
+    orc_mips_emit_trunc_w_fmt(p, ORC_MIPS_FMT_D, dest,src)
+#define orc_mips_emit_trunc_w_s(p, dest, src) \
+    orc_mips_emit_trunc_w_fmt(p, ORC_MIPS_FMT_S, dest,src)
 
 void orc_mips_do_fixups (OrcCompiler *compiler);
 

@@ -90,6 +90,23 @@ orc_mips_reg_name (int reg)
   return "ERROR";
 }
 
+static const char *
+orc_mips_format_name (int format) {
+  switch (format) {
+  case ORC_MIPS_FMT_S:
+    return "s";
+    break;
+  case ORC_MIPS_FMT_D:
+    return "d";
+    break;
+  case ORC_MIPS_FMT_W:
+    return "w";
+    break;
+  default:
+    return "ERROR";
+  }
+}
+
 void
 orc_mips_emit (OrcCompiler *compiler, orc_uint32 insn)
 {
@@ -973,43 +990,25 @@ orc_mips_emit_pref (OrcCompiler *compiler,
 }
 
 void
-orc_mips_emit_add_s (OrcCompiler *compiler,
-                     OrcMipsFloatRegister dest,
-                     OrcMipsFloatRegister source1,
-                     OrcMipsFloatRegister source2)
+orc_mips_emit_add_fmt (OrcCompiler *compiler,
+                       int format,
+                       OrcMipsFloatRegister dest,
+                       OrcMipsFloatRegister source1,
+                       OrcMipsFloatRegister source2)
 {
-  ORC_ASM_CODE (compiler, "  add.s   %s, %s, %s\n",
+  ORC_ASM_CODE (compiler, "  add.%s   %s, %s, %s\n",
+                orc_mips_format_name (format),
                 orc_mips_reg_name (dest),
                 orc_mips_reg_name (source1),
                 orc_mips_reg_name (source2));
   orc_mips_emit (compiler,
                  021 << 26 /* COP1 */
-                 | 0x10 << 21 /* single precision fp */
+                 | format << 21
                  | (source2 - ORC_FP_REG_BASE) << 16
                  | (source1 - ORC_FP_REG_BASE) << 11
                  | (dest - ORC_FP_REG_BASE) << 6
                  | 0 /* ADD */);
 }
-
-void
-orc_mips_emit_add_d (OrcCompiler *compiler,
-                     OrcMipsFloatRegister dest,
-                     OrcMipsFloatRegister source1,
-                     OrcMipsFloatRegister source2)
-{
-  ORC_ASM_CODE (compiler, "  add.d   %s, %s, %s\n",
-                orc_mips_reg_name (dest),
-                orc_mips_reg_name (source1),
-                orc_mips_reg_name (source2));
-  orc_mips_emit (compiler,
-                 021 << 26 /* COP1 */
-                 | 0x11 << 21 /* double precision fp */
-                 | (source2 - ORC_FP_REG_BASE) << 16
-                 | (source1 - ORC_FP_REG_BASE) << 11
-                 | (dest - ORC_FP_REG_BASE) << 6
-                 | 0 /* ADD */);
-}
-
 
 void
 orc_mips_emit_lwc1 (OrcCompiler *compiler,
@@ -1141,16 +1140,18 @@ orc_mips_emit_mfhc1 (OrcCompiler *compiler,
 }
 
 void
-orc_mips_emit_cvt_s_d (OrcCompiler *compiler,
-                       OrcMipsFloatRegister dest,
-                       OrcMipsFloatRegister src)
+orc_mips_emit_cvt_s_fmt (OrcCompiler *compiler,
+                         int format,
+                         OrcMipsFloatRegister dest,
+                         OrcMipsFloatRegister src)
 {
-  ORC_ASM_CODE (compiler, "  cvt.s.d  %s, %s\n",
+  ORC_ASM_CODE (compiler, "  cvt.s.%s  %s, %s\n",
+                orc_mips_format_name (format),
                 orc_mips_reg_name (dest),
                 orc_mips_reg_name (src));
   orc_mips_emit (compiler,
                  021 << 26 /* COP1 */
-                 | 0x11 << 21 /* double precision floating point format  */
+                 | format << 21
                  | 0 << 16
                  | (src - ORC_FP_REG_BASE) << 11
                  | (dest - ORC_FP_REG_BASE) << 6
@@ -1158,33 +1159,18 @@ orc_mips_emit_cvt_s_d (OrcCompiler *compiler,
 }
 
 void
-orc_mips_emit_cvt_s_w (OrcCompiler *compiler,
-                       OrcMipsFloatRegister dest,
-                       OrcMipsFloatRegister src)
+orc_mips_emit_cvt_d_fmt (OrcCompiler *compiler,
+                         int format,
+                         OrcMipsFloatRegister dest,
+                         OrcMipsFloatRegister src)
 {
-  ORC_ASM_CODE (compiler, "  cvt.s.w  %s, %s\n",
+  ORC_ASM_CODE (compiler, "  cvt.d.%s  %s, %s\n",
+                orc_mips_format_name (format),
                 orc_mips_reg_name (dest),
                 orc_mips_reg_name (src));
   orc_mips_emit (compiler,
                  021 << 26 /* COP1 */
-                 | 0x14 << 21 /* fixed point word (32 bits) */
-                 | 0 << 16
-                 | (src - ORC_FP_REG_BASE) << 11
-                 | (dest - ORC_FP_REG_BASE) << 6
-                 | 040 /* CVT.D */);
-}
-
-void
-orc_mips_emit_cvt_d_s (OrcCompiler *compiler,
-                       OrcMipsFloatRegister dest,
-                       OrcMipsFloatRegister src)
-{
-  ORC_ASM_CODE (compiler, "  cvt.d.s  %s, %s\n",
-                orc_mips_reg_name (dest),
-                orc_mips_reg_name (src));
-  orc_mips_emit (compiler,
-                 021 << 26 /* COP1 */
-                 | 0x10 << 21 /* single precision floating point format  */
+                 | format << 21
                  | 0 << 16
                  | (src - ORC_FP_REG_BASE) << 11
                  | (dest - ORC_FP_REG_BASE) << 6
@@ -1192,84 +1178,37 @@ orc_mips_emit_cvt_d_s (OrcCompiler *compiler,
 }
 
 void
-orc_mips_emit_cvt_d_w (OrcCompiler *compiler,
+orc_mips_emit_trunc_w_fmt (OrcCompiler *compiler,
+                           int format,
+                           OrcMipsFloatRegister dest,
+                           OrcMipsFloatRegister src)
+{
+  ORC_ASM_CODE (compiler, "  trunc.w.%s %s, %s\n",
+                orc_mips_format_name (format),
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (src));
+  orc_mips_emit (compiler,
+                 021 << 26 /* COP1 */
+                 | format << 21
+                 | 0 << 16
+                 | (src - ORC_FP_REG_BASE) << 11
+                 | (dest - ORC_FP_REG_BASE) << 6
+                 | 015 /* TRUNC.W */);
+}
+
+void
+orc_mips_emit_mov_fmt (OrcCompiler *compiler,
+                       int format,
                        OrcMipsFloatRegister dest,
                        OrcMipsFloatRegister src)
 {
-  ORC_ASM_CODE (compiler, "  cvt.d.w  %s, %s\n",
+  ORC_ASM_CODE (compiler, "  mov.%s   %s, %s\n",
+                orc_mips_format_name (format),
                 orc_mips_reg_name (dest),
                 orc_mips_reg_name (src));
   orc_mips_emit (compiler,
                  021 << 26 /* COP1 */
-                 | 0x14 << 21 /* fixed point word (32 bits) */
-                 | 0 << 16
-                 | (src - ORC_FP_REG_BASE) << 11
-                 | (dest - ORC_FP_REG_BASE) << 6
-                 | 041 /* CVT.D */);
-}
-
-void
-orc_mips_emit_trunc_w_d (OrcCompiler *compiler,
-                         OrcMipsFloatRegister dest,
-                         OrcMipsFloatRegister src)
-{
-  ORC_ASM_CODE (compiler, "  trunc.w.d %s, %s\n",
-                orc_mips_reg_name (dest),
-                orc_mips_reg_name (src));
-  orc_mips_emit (compiler,
-                 021 << 26 /* COP1 */
-                 | 0x11 << 21 /* double precision floating point format  */
-                 | 0 << 16
-                 | (src - ORC_FP_REG_BASE) << 11
-                 | (dest - ORC_FP_REG_BASE) << 6
-                 | 015 /* TRUNC.W */);
-}
-
-void
-orc_mips_emit_trunc_w_s (OrcCompiler *compiler,
-                         OrcMipsFloatRegister dest,
-                         OrcMipsFloatRegister src)
-{
-  ORC_ASM_CODE (compiler, "  trunc.w.s %s, %s\n",
-                orc_mips_reg_name (dest),
-                orc_mips_reg_name (src));
-  orc_mips_emit (compiler,
-                 021 << 26 /* COP1 */
-                 | 0x10 << 21 /* single precision floating point format  */
-                 | 0 << 16
-                 | (src - ORC_FP_REG_BASE) << 11
-                 | (dest - ORC_FP_REG_BASE) << 6
-                 | 015 /* TRUNC.W */);
-}
-
-void
-orc_mips_emit_mov_s (OrcCompiler *compiler,
-                     OrcMipsFloatRegister dest,
-                     OrcMipsFloatRegister src)
-{
-  ORC_ASM_CODE (compiler, "  mov.s   %s, %s\n",
-                orc_mips_reg_name (dest),
-                orc_mips_reg_name (src));
-  orc_mips_emit (compiler,
-                 021 << 26 /* COP1 */
-                 | 0x10 << 21 /* single precision floating point format  */
-                 | 0 << 16
-                 | (src - ORC_FP_REG_BASE) << 11
-                 | (dest - ORC_FP_REG_BASE) << 6
-                 | 06 /* MOV */);
-}
-
-void
-orc_mips_emit_mov_d (OrcCompiler *compiler,
-                     OrcMipsFloatRegister dest,
-                     OrcMipsFloatRegister src)
-{
-  ORC_ASM_CODE (compiler, "  mov.d   %s, %s\n",
-                orc_mips_reg_name (dest),
-                orc_mips_reg_name (src));
-  orc_mips_emit (compiler,
-                 021 << 26 /* COP1 */
-                 | 0x11 << 21 /* double precision floating point format  */
+                 | format << 21
                  | 0 << 16
                  | (src - ORC_FP_REG_BASE) << 11
                  | (dest - ORC_FP_REG_BASE) << 6
