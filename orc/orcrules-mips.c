@@ -244,11 +244,21 @@ mips_rule_subb (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 void
 mips_rule_copyl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
-  int src = ORC_SRC_ARG (compiler, insn, 0);
-  int dest = ORC_DEST_ARG (compiler, insn, 0);
+  OrcVariable *src = compiler->vars + insn->src_args[0];
+  OrcVariable *dest = compiler->vars + insn->dest_args[0];
 
-  if (dest != src)
-    orc_mips_emit_move (compiler, dest, src);
+  if (dest != src) {
+    if (dest->param_type != src->param_type) {
+      ORC_COMPILER_ERROR (compiler,
+           "copyl: cannot copy into variable of incompatible param type");
+      return;
+    }
+    if (dest->param_type == ORC_PARAM_TYPE_FLOAT) {
+      orc_mips_emit_mov_s (compiler, dest->alloc, src->alloc);
+    } else {
+      orc_mips_emit_move (compiler, dest->alloc, src->alloc);
+    }
+  }
 }
 
 void
