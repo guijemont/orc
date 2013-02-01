@@ -684,6 +684,17 @@ mips_rule_convubw (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 }
 
 void
+mips_rule_convuwl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src = ORC_SRC_ARG (compiler, insn, 0);
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+
+  if (src != dest)
+    orc_mips_emit_move (compiler, dest, src);
+}
+
+
+void
 mips_rule_subw (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src1 = ORC_SRC_ARG (compiler, insn, 0);
@@ -885,6 +896,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "convsuswb", mips_rule_convsuswb, NULL);
   orc_rule_register (rule_set, "convsbw", mips_rule_convsbw, NULL);
   orc_rule_register (rule_set, "convubw", mips_rule_convubw, NULL);
+  orc_rule_register (rule_set, "convuwl", mips_rule_convuwl, NULL);
   orc_rule_register (rule_set, "convwb", mips_rule_convwb, NULL);
   orc_rule_register (rule_set, "convlw", mips_rule_convlw, NULL);
   orc_rule_register (rule_set, "select0wb", mips_rule_convwb, NULL);
