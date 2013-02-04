@@ -590,6 +590,27 @@ orc_mips_emit_subu_ph (OrcCompiler *compiler,
 }
 
 void
+orc_mips_emit_xori (OrcCompiler *compiler, OrcMipsRegister dest,
+                     OrcMipsRegister source, int value)
+{
+  ORC_ASM_CODE (compiler, "  xori    %s, %s, %d\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source), value);
+  orc_mips_emit (compiler, MIPS_IMMEDIATE_INSTRUCTION(016, source, dest, value));
+}
+
+void
+orc_mips_emit_xor (OrcCompiler *compiler, OrcMipsRegister dest,
+                   OrcMipsRegister source1, OrcMipsRegister source2)
+{
+  ORC_ASM_CODE (compiler, "  xor     %s, %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source1),
+                orc_mips_reg_name (source2));
+  orc_mips_emit (compiler, MIPS_BINARY_INSTRUCTION(0, source1, source2, dest, 0, 046));
+}
+
+void
 orc_mips_emit_srl (OrcCompiler *compiler,
                      OrcMipsRegister dest, OrcMipsRegister source, int value)
 {
@@ -597,6 +618,26 @@ orc_mips_emit_srl (OrcCompiler *compiler,
                 orc_mips_reg_name (dest),
                 orc_mips_reg_name (source), value);
   orc_mips_emit (compiler, MIPS_BINARY_INSTRUCTION(0, ORC_MIPS_ZERO, source, dest, value, 02));
+}
+
+void
+orc_mips_emit_srlv (OrcCompiler *compiler,
+                    OrcMipsRegister dest,
+                    OrcMipsRegister source,
+                    OrcMipsRegister shift)
+{
+  ORC_ASM_CODE (compiler, "  srlv    %s, %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source),
+                orc_mips_reg_name (shift));
+
+  orc_mips_emit (compiler,
+                 0 << 26 /* SPECIAL */
+                 | (shift - ORC_GP_REG_BASE) << 21
+                 | (source - ORC_GP_REG_BASE) << 16
+                 | (dest - ORC_GP_REG_BASE) << 11
+                 | 0 << 6
+                 | 06 /* SRLV */);
 }
 
 void
@@ -608,6 +649,27 @@ orc_mips_emit_sll (OrcCompiler *compiler,
                 orc_mips_reg_name (source), value);
   orc_mips_emit (compiler, MIPS_BINARY_INSTRUCTION(0, ORC_MIPS_ZERO, source, dest, value, 0));
 }
+
+void
+orc_mips_emit_sllv (OrcCompiler *compiler,
+                    OrcMipsRegister dest,
+                    OrcMipsRegister source,
+                    OrcMipsRegister shift)
+{
+  ORC_ASM_CODE (compiler, "  sllv    %s, %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source),
+                orc_mips_reg_name (shift));
+
+  orc_mips_emit (compiler,
+                 0 << 26 /* SPECIAL */
+                 | (shift - ORC_GP_REG_BASE) << 21
+                 | (source - ORC_GP_REG_BASE) << 16
+                 | (dest - ORC_GP_REG_BASE) << 11
+                 | 0 << 6
+                 | 04 /* SLLV */);
+}
+
 
 void
 orc_mips_emit_sra (OrcCompiler *compiler,
