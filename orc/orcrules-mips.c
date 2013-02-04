@@ -242,6 +242,28 @@ mips_rule_subb (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 }
 
 void
+mips_rule_xorl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src1 = ORC_SRC_ARG (compiler, insn, 0);
+  OrcVariable *src2 = compiler->vars + insn->src_args[1];
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+
+  switch(src2->vartype) {
+  case ORC_VAR_TYPE_CONST:
+    orc_mips_emit_xori (compiler, dest, src1, src2->value.i);
+    break;
+  case ORC_VAR_TYPE_PARAM:
+    orc_mips_emit_lw (compiler, ORC_MIPS_T3,
+                      compiler->exec_reg,
+                      ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[1]));
+    orc_mips_emit_xor (compiler, dest, src1, ORC_MIPS_T3);
+  default:
+    orc_mips_emit_xor (compiler, dest, src1, src2->alloc);
+  }
+
+}
+
+void
 mips_rule_copyq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   OrcVariable *src = compiler->vars + insn->src_args[0];
@@ -474,6 +496,51 @@ mips_rule_shruw (OrcCompiler *compiler, void *user, OrcInstruction *insn)
     ORC_COMPILER_ERROR(compiler, "rule only implemented for constants");
   }
 }
+
+void
+mips_rule_shrul (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src1 = ORC_SRC_ARG (compiler, insn, 0);
+  OrcVariable *src2 = compiler->vars + insn->src_args[1];
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+
+  switch (src2->vartype) {
+  case ORC_VAR_TYPE_CONST:
+    orc_mips_emit_srl (compiler, dest, src1, src2->value.i);
+    break;
+  case ORC_VAR_TYPE_PARAM:
+    orc_mips_emit_lw (compiler, ORC_MIPS_T3,
+                      compiler->exec_reg,
+                      ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[1]));
+    orc_mips_emit_srlv (compiler, dest, src1, ORC_MIPS_T3);
+    break;
+  default:
+    orc_mips_emit_srlv (compiler, dest, src1, src2->alloc);
+  }
+}
+
+void
+mips_rule_shll (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  int src1 = ORC_SRC_ARG (compiler, insn, 0);
+  OrcVariable *src2 = compiler->vars + insn->src_args[1];
+  int dest = ORC_DEST_ARG (compiler, insn, 0);
+
+  switch (src2->vartype) {
+  case ORC_VAR_TYPE_CONST:
+    orc_mips_emit_sll (compiler, dest, src1, src2->value.i);
+    break;
+  case ORC_VAR_TYPE_PARAM:
+    orc_mips_emit_lw (compiler, ORC_MIPS_T3,
+                      compiler->exec_reg,
+                      ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[1]));
+    orc_mips_emit_sllv (compiler, dest, src1, ORC_MIPS_T3);
+    break;
+  default:
+    orc_mips_emit_sllv (compiler, dest, src1, src2->alloc);
+  }
+}
+
 
 void
 mips_rule_loadupib (OrcCompiler *compiler, void *user, OrcInstruction *insn)
@@ -908,6 +975,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "addw", mips_rule_addw, NULL);
   orc_rule_register (rule_set, "addb", mips_rule_addb, NULL);
   orc_rule_register (rule_set, "subb", mips_rule_subb, NULL);
+  orc_rule_register (rule_set, "xorl", mips_rule_xorl, NULL);
   orc_rule_register (rule_set, "copyq", mips_rule_copyq, NULL);
   orc_rule_register (rule_set, "copyl", mips_rule_copyl, NULL);
   orc_rule_register (rule_set, "copyw", mips_rule_copyl, NULL);
@@ -938,6 +1006,8 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "loadupdb", mips_rule_loadupdb, NULL);
   orc_rule_register (rule_set, "shrsw", mips_rule_shrsw, NULL);
   orc_rule_register (rule_set, "shruw", mips_rule_shruw, NULL);
+  orc_rule_register (rule_set, "shrul", mips_rule_shrul, NULL);
+  orc_rule_register (rule_set, "shll", mips_rule_shll, NULL);
   orc_rule_register (rule_set, "swapl", mips_rule_swapl, NULL);
   orc_rule_register (rule_set, "swapw", mips_rule_swapw, NULL);
   orc_rule_register (rule_set, "avgub", mips_rule_avgub, NULL);
