@@ -710,6 +710,19 @@ mips_rule_loadupdb (OrcCompiler *compiler, void *user, OrcInstruction *insn)
   src->update_type = 1;
 }
 
+static void
+mips_load_imm32 (OrcCompiler *compiler, OrcMipsRegister dest, int value)
+{
+  orc_int16 high_bits = ((value >> 16) & 0xffff);
+
+  if (high_bits) {
+    orc_mips_emit_lui (compiler, dest, high_bits);
+    orc_mips_emit_ori (compiler, dest, dest, value & 0xffff);
+  } else {
+    orc_mips_emit_ori (compiler, dest, ORC_MIPS_ZERO, value & 0xffff);
+  }
+}
+
 void
 mips_rule_loadp (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
@@ -725,20 +738,24 @@ mips_rule_loadp (OrcCompiler *compiler, void *user, OrcInstruction *insn)
       else if (size == 2)
         orc_mips_emit_replv_ph (compiler, dest->alloc, dest->alloc);
     } else if (size == 4) {
-      orc_int16 high_bits;
-      int dest_reg = dest->alloc;
+      OrcMipsRegister dest_reg = dest->alloc;
       if (dest->param_type == ORC_PARAM_TYPE_FLOAT)
         dest_reg = ORC_MIPS_T3;
 
-      high_bits = ((src->value.i >> 16) & 0xffff);
-      if (high_bits) {
-        orc_mips_emit_lui (compiler, dest_reg, high_bits);
-        orc_mips_emit_ori (compiler, dest_reg, dest_reg, src->value.i & 0xffff);
-      } else {
-        orc_mips_emit_ori (compiler, dest_reg, ORC_MIPS_ZERO, src->value.i & 0xffff);
-      }
+      mips_load_imm32 (compiler, dest_reg, src->value.i);
       if (dest->param_type == ORC_PARAM_TYPE_FLOAT)
         orc_mips_emit_mtc1 (compiler, dest->alloc, dest_reg);
+    } else if (size == 8) {
+      OrcMipsRegister dest_reg = dest->alloc;
+      if (dest->param_type == ORC_PARAM_TYPE_FLOAT)
+        dest_reg = ORC_MIPS_T3;
+
+      mips_load_imm32 (compiler, dest_reg + 1, src->value.i & 0xffffffff);
+      mips_load_imm32 (compiler, dest_reg, src->value.i >> 32);
+      if (dest->param_type == ORC_PARAM_TYPE_FLOAT) {
+        orc_mips_emit_mtc1 (compiler, dest->alloc, dest_reg);
+        orc_mips_emit_mtc1 (compiler, dest->alloc + 1, dest_reg + 1);
+      }
     } else {
       ORC_PROGRAM_ERROR(compiler,"unimplemented");
     }
@@ -1031,6 +1048,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "loadl", mips_rule_load, (void *) 2);
   orc_rule_register (rule_set, "loadw", mips_rule_load, (void *) 1);
   orc_rule_register (rule_set, "loadb", mips_rule_load, (void *) 0);
+  orc_rule_register (rule_set, "loadpq", mips_rule_loadp, (void *) 8);
   orc_rule_register (rule_set, "loadpl", mips_rule_loadp, (void *) 4);
   orc_rule_register (rule_set, "loadpw", mips_rule_loadp, (void *) 2);
   orc_rule_register (rule_set, "loadpb", mips_rule_loadp, (void *) 1);
