@@ -748,6 +748,29 @@ mips_rule_loadp (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 }
 
 void
+mips_rule_swapq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+{
+  OrcVariable *src = compiler->vars + insn->src_args[0];
+  OrcVariable *dest = compiler->vars + insn->dest_args[0];
+
+  if (src->param_type != ORC_PARAM_TYPE_INT64
+      || dest->param_type != ORC_PARAM_TYPE_INT64) {
+    /* this is a bit symbolic, since loadq only supports doubles too and should
+     * have complained */
+    ORC_COMPILER_ERROR (compiler,
+                        "swapq only supports int64 values on this platform");
+    return;
+  }
+
+  /* wsbh swaps bytes in halfwords, packrl.ph swaps halfwords in 32 bit registers */
+  orc_mips_emit_wsbh (compiler, src->alloc, src->alloc);
+  orc_mips_emit_packrl_ph (compiler, ORC_MIPS_T3, src->alloc, src->alloc);
+  orc_mips_emit_wsbh (compiler, src->alloc + 1, src->alloc + 1);
+  orc_mips_emit_packrl_ph (compiler, src->alloc, src->alloc + 1, src->alloc + 1);
+  orc_mips_emit_move (compiler, src->alloc + 1, ORC_MIPS_T3);
+}
+
+void
 mips_rule_swapl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = ORC_SRC_ARG (compiler, insn, 0);
@@ -1034,6 +1057,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "shruw", mips_rule_shruw, NULL);
   orc_rule_register (rule_set, "shrul", mips_rule_shrul, NULL);
   orc_rule_register (rule_set, "shll", mips_rule_shll, NULL);
+  orc_rule_register (rule_set, "swapq", mips_rule_swapq, NULL);
   orc_rule_register (rule_set, "swapl", mips_rule_swapl, NULL);
   orc_rule_register (rule_set, "swapw", mips_rule_swapw, NULL);
   orc_rule_register (rule_set, "avgub", mips_rule_avgub, NULL);
