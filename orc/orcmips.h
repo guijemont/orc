@@ -193,6 +193,7 @@ void orc_mips_emit_srlv (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsReg
 void orc_mips_emit_sll (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);
 void orc_mips_emit_sllv (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, OrcMipsRegister shift);
 void orc_mips_emit_sra (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);
+void orc_mips_emit_srav (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, OrcMipsRegister shift);
 void orc_mips_emit_shll_ph (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);
 void orc_mips_emit_shra_ph (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);
 void orc_mips_emit_shrl_ph (OrcCompiler *compiler, OrcMipsRegister dest, OrcMipsRegister source, int value);

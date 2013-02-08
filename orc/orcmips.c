@@ -682,6 +682,26 @@ orc_mips_emit_sra (OrcCompiler *compiler,
 }
 
 void
+orc_mips_emit_srav (OrcCompiler *compiler,
+                    OrcMipsRegister dest,
+                    OrcMipsRegister source,
+                    OrcMipsRegister shift)
+{
+  ORC_ASM_CODE (compiler, "  srav    %s, %s, %s\n",
+                orc_mips_reg_name (dest),
+                orc_mips_reg_name (source),
+                orc_mips_reg_name (shift));
+
+  orc_mips_emit (compiler,
+                 0 << 26 /* SPECIAL */
+                 | (shift - ORC_GP_REG_BASE) << 21
+                 | (source - ORC_GP_REG_BASE) << 16
+                 | (dest - ORC_GP_REG_BASE) << 11
+                 | 0 << 6
+                 | 07 /* SRAV */);
+}
+
+void
 orc_mips_emit_shll_ph (OrcCompiler *compiler,
                        OrcMipsRegister dest,
                        OrcMipsRegister source,
