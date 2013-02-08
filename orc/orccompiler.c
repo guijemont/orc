@@ -91,8 +91,9 @@ orc_compiler_allocate_register (OrcCompiler *compiler,
   int roff;
   int reg;
   int double_register =
-      (compiler->target_flags & ORC_TARGET_DOUBLE_IN_TWO_REGISTERS)
-      && var != NULL && var->param_type == ORC_PARAM_TYPE_DOUBLE;
+      (compiler->target_flags & ORC_TARGET_BIG_IN_TWO_REGISTERS)
+      && var != NULL && (var->param_type == ORC_PARAM_TYPE_DOUBLE
+                         || var->param_type == ORC_PARAM_TYPE_INT64);
   int reg_offset;
 
   if ((compiler->target_flags & ORC_TARGET_FP_REGISTERS)

@@ -14,7 +14,8 @@ enum {
   ORC_TARGET_C_BARE = (1<<1),
   ORC_TARGET_C_NOEXEC = (1<<2),
   ORC_TARGET_C_OPCODE = (1<<3),
-  ORC_TARGET_DOUBLE_IN_TWO_REGISTERS = (1 << 27),
+  /* Put double and int64 values in two registers */
+  ORC_TARGET_BIG_IN_TWO_REGISTERS = (1 << 27),
   ORC_TARGET_FP_REGISTERS = (1 << 28),
   ORC_TARGET_CLEAN_COMPILE = (1<<29),
   ORC_TARGET_FAST_NAN = (1<<30),

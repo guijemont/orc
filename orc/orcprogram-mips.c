@@ -88,7 +88,7 @@ orc_mips_init (void)
 unsigned int
 orc_compiler_orc_mips_get_default_flags (void)
 {
-  unsigned int flags = ORC_TARGET_FP_REGISTERS | ORC_TARGET_DOUBLE_IN_TWO_REGISTERS;
+  unsigned int flags = ORC_TARGET_FP_REGISTERS | ORC_TARGET_BIG_IN_TWO_REGISTERS;
 
   if (_orc_compiler_flag_debug) {
     flags |= ORC_TARGET_MIPS_FRAME_POINTER;
