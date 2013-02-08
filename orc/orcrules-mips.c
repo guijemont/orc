@@ -295,15 +295,24 @@ mips_rule_copyq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
   OrcVariable *src = compiler->vars + insn->src_args[0];
   OrcVariable *dest = compiler->vars + insn->dest_args[0];
 
-  if (dest->param_type != ORC_PARAM_TYPE_DOUBLE
-      || src->param_type != ORC_PARAM_TYPE_DOUBLE) {
-    ORC_COMPILER_ERROR (compiler,
-                        "copyq for types other than double not implemented");
+  if (dest->param_type != src->param_type) {
+    ORC_COMPILER_ERROR (compiler, "copyq need source and dest of same type");
     return;
   }
 
-  if (dest->alloc != src->alloc) {
-    orc_mips_emit_mov_d (compiler, dest->alloc, src->alloc);
+    if (dest->alloc != src->alloc) {
+      switch (src->param_type) {
+      case ORC_PARAM_TYPE_DOUBLE:
+        orc_mips_emit_mov_d (compiler, dest->alloc, src->alloc);
+        break;
+      case ORC_PARAM_TYPE_INT64:
+        orc_mips_emit_move (compiler, dest->alloc, src->alloc);
+        orc_mips_emit_move (compiler, dest->alloc + 1, src->alloc + 1);
+        break;
+      default:
+        ORC_COMPILER_ERROR (compiler, "type not handled by copyq");
+        return;
+      }
   }
 }
 
