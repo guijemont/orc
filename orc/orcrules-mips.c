@@ -787,22 +787,29 @@ mips_rule_swapq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   OrcVariable *src = compiler->vars + insn->src_args[0];
   OrcVariable *dest = compiler->vars + insn->dest_args[0];
+  int src_reg = src->alloc;
+  int dest_reg = dest->alloc;
 
-  if (src->param_type != ORC_PARAM_TYPE_INT64
-      || dest->param_type != ORC_PARAM_TYPE_INT64) {
-    /* this is a bit symbolic, since loadq only supports doubles too and should
-     * have complained */
-    ORC_COMPILER_ERROR (compiler,
-                        "swapq only supports int64 values on this platform");
-    return;
+  if (src->param_type == ORC_PARAM_TYPE_DOUBLE) {
+    orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, src_reg);
+    orc_mips_emit_mfc1 (compiler, ORC_MIPS_T4, src_reg+1);
+    src_reg = ORC_MIPS_T3;
+  }
+  if (dest->param_type == ORC_PARAM_TYPE_DOUBLE) {
+    dest_reg = ORC_MIPS_T3;
   }
 
   /* wsbh swaps bytes in halfwords, packrl.ph swaps halfwords in 32 bit registers */
-  orc_mips_emit_wsbh (compiler, src->alloc, src->alloc);
-  orc_mips_emit_packrl_ph (compiler, ORC_MIPS_T3, src->alloc, src->alloc);
-  orc_mips_emit_wsbh (compiler, src->alloc + 1, src->alloc + 1);
-  orc_mips_emit_packrl_ph (compiler, src->alloc, src->alloc + 1, src->alloc + 1);
-  orc_mips_emit_move (compiler, src->alloc + 1, ORC_MIPS_T3);
+  orc_mips_emit_wsbh (compiler, ORC_MIPS_T5, src_reg);
+  orc_mips_emit_packrl_ph (compiler, ORC_MIPS_T5, ORC_MIPS_T5, ORC_MIPS_T5);
+  orc_mips_emit_wsbh (compiler, dest_reg, src_reg + 1);
+  orc_mips_emit_packrl_ph (compiler, dest_reg, dest_reg, dest_reg);
+  orc_mips_emit_move (compiler, dest_reg + 1, ORC_MIPS_T5);
+
+  if (dest->param_type == ORC_PARAM_TYPE_DOUBLE) {
+    orc_mips_emit_mtc1 (compiler, dest_reg, ORC_MIPS_T3);
+    orc_mips_emit_mtc1 (compiler, dest_reg + 1, ORC_MIPS_T4);
+  }
 }
 
 void
