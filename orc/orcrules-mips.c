@@ -358,10 +358,19 @@ mips_rule_shrsl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
   int src1 = ORC_SRC_ARG (compiler, insn, 0);
   OrcVariable *src2 = compiler->vars + insn->src_args[1];
   int dest = ORC_DEST_ARG (compiler, insn, 0);
-  if (src2->vartype == ORC_VAR_TYPE_CONST) {
+
+  switch (src2->vartype) {
+  case ORC_VAR_TYPE_CONST:
     orc_mips_emit_sra (compiler, dest, src1, src2->value.i);
-  } else {
-    ORC_COMPILER_ERROR(compiler, "rule only implemented for constants");
+    break;
+  case ORC_VAR_TYPE_PARAM:
+    orc_mips_emit_lw (compiler, ORC_MIPS_T3,
+                      compiler->exec_reg,
+                      ORC_MIPS_EXECUTOR_OFFSET_PARAMS(insn->src_args[1]));
+    orc_mips_emit_srav (compiler, dest, src1, ORC_MIPS_T3);
+    break;
+  default:
+    orc_mips_emit_srav (compiler, dest, src1, src2->alloc);
   }
 }
 
