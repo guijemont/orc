@@ -99,20 +99,33 @@ mips_rule_load (OrcCompiler *compiler, void *user, OrcInstruction *insn)
     }
     break;
   case 3:
-    if (type != ORC_PARAM_TYPE_DOUBLE) {
-      ORC_COMPILER_ERROR (compiler, "unimplemented");
+    switch(type) {
+    case ORC_PARAM_TYPE_DOUBLE:
+      if (is_aligned) {
+        orc_mips_emit_ldc1 (compiler, dest, src, offset);
+      } else {
+        /* note: little endian specific */
+        orc_mips_emit_lwr (compiler, ORC_MIPS_T3, src, offset);
+        orc_mips_emit_lwl (compiler, ORC_MIPS_T3, src, offset+3);
+        orc_mips_emit_lwr (compiler, ORC_MIPS_T4, src, offset+4);
+        orc_mips_emit_lwl (compiler, ORC_MIPS_T4, src, offset+7);
+        orc_mips_emit_mtc1 (compiler, dest, ORC_MIPS_T3);
+        orc_mips_emit_mthc1 (compiler, dest, ORC_MIPS_T4);
+      }
       break;
-    }
-    if (is_aligned) {
-      orc_mips_emit_ldc1 (compiler, dest, src, offset);
-    } else {
-      /* note: little endian specific */
-      orc_mips_emit_lwr (compiler, ORC_MIPS_T3, src, offset);
-      orc_mips_emit_lwl (compiler, ORC_MIPS_T3, src, offset+3);
-      orc_mips_emit_lwr (compiler, ORC_MIPS_T4, src, offset+4);
-      orc_mips_emit_lwl (compiler, ORC_MIPS_T4, src, offset+7);
-      orc_mips_emit_mtc1 (compiler, dest, ORC_MIPS_T3);
-      orc_mips_emit_mthc1 (compiler, dest, ORC_MIPS_T4);
+    case ORC_PARAM_TYPE_INT64:
+      if (is_aligned) {
+        orc_mips_emit_lw (compiler, dest, src, offset);
+        orc_mips_emit_lw (compiler, dest+1, src, offset+4);
+      } else {
+        orc_mips_emit_lwr (compiler, dest, src, offset);
+        orc_mips_emit_lwl (compiler, dest, src, offset+3);
+        orc_mips_emit_lwr (compiler, dest+1, src, offset+4);
+        orc_mips_emit_lwl (compiler, dest+1, src, offset+7);
+      }
+      break;
+    default:
+      ORC_COMPILER_ERROR (compiler, "unimplemented");
     }
     break;
   default:
@@ -177,19 +190,32 @@ mips_rule_store (OrcCompiler *compiler, void *user, OrcInstruction *insn)
     }
     break;
   case 3:
-    if (type != ORC_PARAM_TYPE_DOUBLE) {
-      ORC_COMPILER_ERROR (compiler, "unimplemented");
+    switch (type) {
+    case ORC_PARAM_TYPE_DOUBLE:
+      if (is_aligned) {
+        orc_mips_emit_sdc1 (compiler, src, dest, offset);
+      } else {
+        orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, src);
+        orc_mips_emit_mfhc1 (compiler, ORC_MIPS_T4, src);
+        orc_mips_emit_swr (compiler, ORC_MIPS_T3, dest, offset);
+        orc_mips_emit_swl (compiler, ORC_MIPS_T3, dest, offset+3);
+        orc_mips_emit_swr (compiler, ORC_MIPS_T4, dest, offset+4);
+        orc_mips_emit_swl (compiler, ORC_MIPS_T4, dest, offset+7);
+      }
       break;
-    }
-    if (is_aligned) {
-      orc_mips_emit_sdc1 (compiler, src, dest, offset);
-    } else {
-      orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, src);
-      orc_mips_emit_mfhc1 (compiler, ORC_MIPS_T4, src);
-      orc_mips_emit_swr (compiler, ORC_MIPS_T3, dest, offset);
-      orc_mips_emit_swl (compiler, ORC_MIPS_T3, dest, offset+3);
-      orc_mips_emit_swr (compiler, ORC_MIPS_T4, dest, offset+4);
-      orc_mips_emit_swl (compiler, ORC_MIPS_T4, dest, offset+7);
+    case ORC_PARAM_TYPE_INT64:
+      if (is_aligned) {
+        orc_mips_emit_sw (compiler, src, dest, offset);
+        orc_mips_emit_sw (compiler, src+1, dest, offset+4);
+      } else {
+        orc_mips_emit_swr (compiler, src, dest, offset);
+        orc_mips_emit_swl (compiler, src, dest, offset+3);
+        orc_mips_emit_swr (compiler, src+1, dest, offset+4);
+        orc_mips_emit_swl (compiler, src+1, dest, offset+7);
+      }
+      break;
+    default:
+      ORC_COMPILER_ERROR (compiler, "unimplemented");
     }
     break;
   default:
