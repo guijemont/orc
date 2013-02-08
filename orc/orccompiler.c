@@ -767,7 +767,7 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
         insn->src_args[k] = actual_var;
       }
 
-      if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_SRC)
+      if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_SRC) {
         switch (compiler->vars[actual_var].size) {
         case 4:
           compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
@@ -780,6 +780,23 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
                              compiler->vars[actual_var].size);
           compiler->result = ORC_COMPILE_RESULT_UNKNOWN_PARSE;
         }
+      } else if (compiler->vars[actual_var].param_type != ORC_PARAM_TYPE_FLOAT
+          && compiler->vars[actual_var].param_type != ORC_PARAM_TYPE_DOUBLE) {
+        switch (compiler->vars[actual_var].size) {
+        case 1:
+        case 2:
+        case 4:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_INT;
+          break;
+        case 8:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_INT64;
+          break;
+        default:
+          ORC_COMPILER_ERROR(compiler, "Unhandled size for int: %d",
+                             compiler->vars[actual_var].size);
+          compiler->result = ORC_COMPILE_RESULT_UNKNOWN_PARSE;
+        }
+      }
 
       if (!compiler->vars[var].used) {
         if (compiler->vars[var].vartype == ORC_VAR_TYPE_TEMP) {
@@ -830,7 +847,7 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
         insn->dest_args[k] = actual_var;
       }
 
-      if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_DEST)
+      if (opcode->flags & ORC_STATIC_OPCODE_FLOAT_DEST) {
         switch (compiler->vars[actual_var].size) {
         case 4:
           compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_FLOAT;
@@ -843,6 +860,23 @@ orc_compiler_rewrite_vars (OrcCompiler *compiler)
                              compiler->vars[actual_var].size);
           compiler->result = ORC_COMPILE_RESULT_UNKNOWN_PARSE;
         }
+      } else if (compiler->vars[actual_var].param_type != ORC_PARAM_TYPE_FLOAT
+          && compiler->vars[actual_var].param_type != ORC_PARAM_TYPE_DOUBLE) {
+        switch (compiler->vars[actual_var].size) {
+        case 1:
+        case 2:
+        case 4:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_INT;
+          break;
+        case 8:
+          compiler->vars[actual_var].param_type = ORC_PARAM_TYPE_INT64;
+          break;
+        default:
+          ORC_COMPILER_ERROR(compiler, "Unhandled size for int: %d",
+                             compiler->vars[actual_var].size);
+          compiler->result = ORC_COMPILE_RESULT_UNKNOWN_PARSE;
+        }
+      }
 
       if (!compiler->vars[var].used) {
         compiler->vars[actual_var].used = TRUE;
