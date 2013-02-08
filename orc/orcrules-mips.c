@@ -92,7 +92,7 @@ mips_rule_load (OrcCompiler *compiler, void *user, OrcInstruction *insn)
         orc_mips_emit_lwr (compiler, ORC_MIPS_T3, src, offset);
         orc_mips_emit_lwl (compiler, ORC_MIPS_T3, src, offset+3);
         orc_mips_emit_mtc1 (compiler, dest, ORC_MIPS_T3);
-            break;
+        break;
       default:
         ORC_COMPILER_ERROR (compiler, "unimplemented");
       }
