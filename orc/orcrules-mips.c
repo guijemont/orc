@@ -353,7 +353,7 @@ mips_rule_mullw (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 
 
 void
-mips_rule_shrs (OrcCompiler *compiler, void *user, OrcInstruction *insn)
+mips_rule_shrsl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src1 = ORC_SRC_ARG (compiler, insn, 0);
   OrcVariable *src2 = compiler->vars + insn->src_args[1];
@@ -1031,7 +1031,7 @@ orc_compiler_orc_mips_register_rules (OrcTarget *target)
   orc_rule_register (rule_set, "copyb", mips_rule_copyl, NULL);
   orc_rule_register (rule_set, "mulswl", mips_rule_mulswl, NULL);
   orc_rule_register (rule_set, "mullw", mips_rule_mullw, NULL);
-  orc_rule_register (rule_set, "shrsl", mips_rule_shrs, NULL);
+  orc_rule_register (rule_set, "shrsl", mips_rule_shrsl, NULL);
   orc_rule_register (rule_set, "convssslw", mips_rule_convssslw, NULL);
   orc_rule_register (rule_set, "convssswb", mips_rule_convssswb, NULL);
   orc_rule_register (rule_set, "convsuswb", mips_rule_convsuswb, NULL);
