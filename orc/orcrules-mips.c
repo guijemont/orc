@@ -809,8 +809,8 @@ mips_rule_swapq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
   orc_mips_emit_move (compiler, dest_reg + 1, ORC_MIPS_T5);
 
   if (dest->param_type == ORC_PARAM_TYPE_DOUBLE) {
-    orc_mips_emit_mtc1 (compiler, dest_reg, ORC_MIPS_T3);
-    orc_mips_emit_mtc1 (compiler, dest_reg + 1, ORC_MIPS_T4);
+    orc_mips_emit_mtc1 (compiler, dest->alloc, ORC_MIPS_T3);
+    orc_mips_emit_mtc1 (compiler, dest->alloc + 1, ORC_MIPS_T4);
   }
 }
 
