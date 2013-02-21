@@ -817,11 +817,24 @@ mips_rule_swapq (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 void
 mips_rule_swapl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
-  int src = ORC_SRC_ARG (compiler, insn, 0);
-  int dest = ORC_DEST_ARG (compiler, insn, 0);
+  OrcVariable *srcvar = compiler->vars + insn->src_args[0];
+  OrcVariable *destvar = compiler->vars + insn->dest_args[0];
+  int src = srcvar->alloc,
+      dest = destvar->alloc;
+
+  if (srcvar->param_type == ORC_PARAM_TYPE_FLOAT) {
+    orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, srcvar->alloc);
+    src = ORC_MIPS_T3;
+  }
+
+  if (destvar->param_type == ORC_PARAM_TYPE_FLOAT)
+    dest = ORC_MIPS_T4;
 
   orc_mips_emit_wsbh (compiler, dest, src);
   orc_mips_emit_packrl_ph (compiler, dest, dest, dest);
+
+  if (destvar->param_type == ORC_PARAM_TYPE_FLOAT)
+    orc_mips_emit_mtc1 (compiler, destvar->alloc, dest);
 }
 
 void
