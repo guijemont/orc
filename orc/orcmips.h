@@ -275,6 +275,9 @@ void orc_mips_emit_trunc_w_fmt (OrcCompiler *compiler, int format, OrcMipsFloatR
 #define orc_mips_emit_trunc_w_s(p, dest, src) \
     orc_mips_emit_trunc_w_fmt(p, ORC_MIPS_FMT_S, dest,src)
 
+void orc_mips_emit_c_ult_s (OrcCompiler *compiler, int cc, OrcMipsFloatRegister src1, OrcMipsFloatRegister src2);
+void orc_mips_emit_movt_s (OrcCompiler *compiler, OrcMipsFloatRegister dest, OrcMipsFloatRegister src, int cc);
+
 void orc_mips_do_fixups (OrcCompiler *compiler);
 
 /* ORC_STRUCT_OFFSET doesn't work for cross-compiling, so we use that */
