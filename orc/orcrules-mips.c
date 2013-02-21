@@ -749,12 +749,12 @@ mips_rule_loadp (OrcCompiler *compiler, void *user, OrcInstruction *insn)
         orc_mips_emit_mtc1 (compiler, dest->alloc, dest_reg);
     } else if (size == 8) {
       OrcMipsRegister dest_reg = dest->alloc;
-      if (dest->param_type == ORC_PARAM_TYPE_FLOAT)
+      if (dest->param_type == ORC_PARAM_TYPE_DOUBLE)
         dest_reg = ORC_MIPS_T3;
 
       mips_load_imm32 (compiler, dest_reg + 1, src->value.i & 0xffffffff);
       mips_load_imm32 (compiler, dest_reg, src->value.i >> 32);
-      if (dest->param_type == ORC_PARAM_TYPE_FLOAT) {
+      if (dest->param_type == ORC_PARAM_TYPE_DOUBLE) {
         orc_mips_emit_mtc1 (compiler, dest->alloc, dest_reg);
         orc_mips_emit_mtc1 (compiler, dest->alloc + 1, dest_reg + 1);
       }
