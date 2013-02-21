@@ -31,6 +31,8 @@
 #include <orc/orcdebug.h>
 #include <stdlib.h>
 
+#define ORC_SL_MAX 2147483647
+#define ORC_SL_MIN (-1-ORC_SL_MAX)
 #define ORC_SW_MAX 32767
 #define ORC_SW_MIN (-1-ORC_SW_MAX)
 #define ORC_SB_MAX 127
@@ -1010,8 +1012,22 @@ mips_rule_convfl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = ORC_SRC_ARG (compiler, insn, 0);
   int dest = ORC_DEST_ARG (compiler, insn, 0);
+  orc_union32 int_min;
 
+  int_min.f = ORC_SL_MIN;
+
+  mips_load_imm32 (compiler, ORC_MIPS_T3, int_min.i);
+  orc_mips_emit_mtc1 (compiler, ORC_MIPS_F1, ORC_MIPS_T3);
+
+  /* truncate float, behaves badly if < ORC_SL_MIN */
   orc_mips_emit_trunc_w_s (compiler, ORC_MIPS_F0, src);
+
+  /* if src < ORC_SL_MIN, we truncate the result to ORC_SL_MIN */
+  orc_mips_emit_c_ult_s (compiler, 0, src, ORC_MIPS_F1);
+  mips_load_imm32 (compiler, ORC_MIPS_T3, ORC_SL_MIN);
+  orc_mips_emit_mtc1 (compiler, ORC_MIPS_F1, ORC_MIPS_T3);
+  orc_mips_emit_movt_s (compiler, ORC_MIPS_F0, ORC_MIPS_F1, 0);
+
   orc_mips_emit_mfc1 (compiler, dest, ORC_MIPS_F0);
 }
 
