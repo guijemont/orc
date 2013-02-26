@@ -1340,18 +1340,20 @@ orc_mips_emit_mov_fmt (OrcCompiler *compiler,
 }
 
 void
-orc_mips_emit_c_ult_s (OrcCompiler *compiler,
-                       int cc,
-                       OrcMipsFloatRegister src1,
-                       OrcMipsFloatRegister src2)
+orc_mips_emit_c_ult_fmt (OrcCompiler *compiler,
+                         int format,
+                         int cc,
+                         OrcMipsFloatRegister src1,
+                         OrcMipsFloatRegister src2)
 {
-  ORC_ASM_CODE (compiler, "  c.ult.s %d, %s, %s\n",
+  ORC_ASM_CODE (compiler, "  c.ult.%s %d, %s, %s\n",
+                orc_mips_format_name (format),
                 cc,
                 orc_mips_reg_name (src1),
                 orc_mips_reg_name (src2));
   orc_mips_emit (compiler,
                  021 << 26 /* COP1 */
-                 | ORC_MIPS_FMT_S << 21
+                 | format << 21
                  | (src2 - ORC_FP_REG_BASE) << 16
                  | (src1 - ORC_FP_REG_BASE) << 11
                  | (cc & 7) << 8
