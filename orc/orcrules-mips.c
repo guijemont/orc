@@ -1015,8 +1015,24 @@ mips_rule_convdl (OrcCompiler *compiler, void *user, OrcInstruction *insn)
 {
   int src = ORC_SRC_ARG (compiler, insn, 0);
   int dest = ORC_DEST_ARG (compiler, insn, 0);
+  orc_union64 int_min;
 
+  int_min.f = ORC_SL_MIN;
+
+  mips_load_imm32 (compiler, ORC_MIPS_T3, int_min.i & 0xffffffff);
+  mips_load_imm32 (compiler, ORC_MIPS_T4, (int_min.i >> 32) & 0xffffffff);
+  orc_mips_emit_mtc1 (compiler, ORC_MIPS_F2, ORC_MIPS_T3);
+  orc_mips_emit_mtc1 (compiler, ORC_MIPS_F3, ORC_MIPS_T4);
+
+  /* truncate double, behaves badly if < ORC_SL_MIN */
   orc_mips_emit_trunc_w_d (compiler, ORC_MIPS_F0, src);
+
+  /* if src < ORC_SL_MIN, we truncate the result to ORC_SL_MIN */
+  orc_mips_emit_c_ult_d (compiler, 0, src, ORC_MIPS_F2); // cc == src < f2
+  mips_load_imm32 (compiler, ORC_MIPS_T3, ORC_SL_MIN); // t3 = SL_MIN
+  orc_mips_emit_mtc1 (compiler, ORC_MIPS_F1, ORC_MIPS_T3); // f1 = *((float *)&t3)
+  orc_mips_emit_movt_s (compiler, ORC_MIPS_F0, ORC_MIPS_F1, 0); // if cc then f0 = f1
+
   orc_mips_emit_mfc1 (compiler, dest, ORC_MIPS_F0);
 }
 
