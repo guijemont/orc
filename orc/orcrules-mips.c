@@ -112,7 +112,7 @@ mips_rule_load (OrcCompiler *compiler, void *user, OrcInstruction *insn)
         orc_mips_emit_lwr (compiler, ORC_MIPS_T4, src, offset+4);
         orc_mips_emit_lwl (compiler, ORC_MIPS_T4, src, offset+7);
         orc_mips_emit_mtc1 (compiler, dest, ORC_MIPS_T3);
-        orc_mips_emit_mthc1 (compiler, dest, ORC_MIPS_T4);
+        orc_mips_emit_mtc1 (compiler, dest + 1, ORC_MIPS_T4);
       }
       break;
     case ORC_PARAM_TYPE_INT64:
@@ -198,7 +198,7 @@ mips_rule_store (OrcCompiler *compiler, void *user, OrcInstruction *insn)
         orc_mips_emit_sdc1 (compiler, src, dest, offset);
       } else {
         orc_mips_emit_mfc1 (compiler, ORC_MIPS_T3, src);
-        orc_mips_emit_mfhc1 (compiler, ORC_MIPS_T4, src);
+        orc_mips_emit_mfc1 (compiler, ORC_MIPS_T4, src+1);
         orc_mips_emit_swr (compiler, ORC_MIPS_T3, dest, offset);
         orc_mips_emit_swl (compiler, ORC_MIPS_T3, dest, offset+3);
         orc_mips_emit_swr (compiler, ORC_MIPS_T4, dest, offset+4);
