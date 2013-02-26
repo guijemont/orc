@@ -131,6 +131,8 @@ orc_compiler_orc_mips_init (OrcCompiler *compiler)
   /* used as temporary variables */
   compiler->valid_regs[ORC_MIPS_F0] = 0;
   compiler->valid_regs[ORC_MIPS_F1] = 0;
+  compiler->valid_regs[ORC_MIPS_F2] = 0;
+  compiler->valid_regs[ORC_MIPS_F3] = 0;
 
   for (i=0;i<ORC_N_REGS;i++){
     compiler->alloc_regs[i] = 0;
