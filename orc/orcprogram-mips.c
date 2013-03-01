@@ -31,6 +31,7 @@
 #include <orc/orcdebug.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/cachectl.h>
 #include "config.h"
 
 unsigned int orc_compiler_orc_mips_get_default_flags (void);
@@ -871,10 +872,31 @@ usual_case:
   orc_mips_emit_epilogue (compiler, stack_size);
 }
 
+#if defined (__GNUC__)
+#define GCC_VERSION \
+  ((__GNUC__*10000) + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__)
+#endif
+
 void
 orc_mips_flush_cache  (OrcCode *code)
 {
 #ifdef HAVE_MIPSEL
-  __clear_cache (code->code, code->code + code->code_size);
+#if defined(GCC_VERSION) && (GCC_VERSION >= 40300)
+  char *start, *end;
+  start = (char *)code->code;
+  end = (char *)code->code + code->code_size;
+#if (GCC_VERSION < 40403)
+/* Work around a bug __clear_cache() in older versions of gcc */
+	{
+		int lineSize;
+		asm ("rdhwr %0, $1" : "=r" (lineSize));
+		start = start & (-lineSize);
+		end = (end & (-lineSize)) - 1;
+	}
 #endif
+  __clear_cache (start, end);
+#else /* no gcc or gcc < 4.3.0, fall back to linux syscall */
+  _flush_cache ((char *)code->code, code->code_size, BCACHE);
+#endif
+#endif /* HAVE_MIPSEL */
 }
